@@ -6,6 +6,10 @@ LSM6DSOX_Driver::LSM6DSOX_Driver(uint8_t address){
     currentData.isValid = false;
 }
 
+SensorType LSM6DSOX_Driver::getType() const {
+    return SensorType::LOW_G_IMU;
+}
+
 bool LSM6DSOX_Driver::begin(){ //Initializes LSM6DS and sets the Accelerometer and Gyrometer's range and data rate.
     if (!lsm.begin_I2C(i2cAddress)) {
         return false;
@@ -46,8 +50,4 @@ bool LSM6DSOX_Driver::read(){
 
 const SensorData& LSM6DSOX_Driver::getData() const {
     return currentData;
-}
-
-SensorType LSM6DSOX_Driver::getType() const {
-    return SensorType::LOW_G_IMU;
 }
