@@ -2,13 +2,18 @@
 #include "sensors/MS5611_Driver.h"
 #include "sensors/LSM6DSOX_Driver.h"
 
-LSM6DSOX_Driver imu;
-MS5611_Driver barometer;
+LSM6DSOX_Driver imu(I2CAddressList::LSM6DSOX_I2C_ADDR);
+MS5611_Driver barometer(I2CAddressList::MS5611_I2C_ADDR);   
 
 void setup(){
-    Serial.begin(115200);
+    Serial.begin(Timings::MAIN_SERIAL_BAUD);
+    
     while(!Serial and millis() < 4000);
-    Serial.println("Flight computer is starting...");
+    Serial.print("Flight computer is starting...");
+    Wire.setSDA(TeensyPins::I2C_SDA_PIN);
+    Wire.setSCL(TeensyPins::I2C_SCL_PIN);
+    Wire.begin();
+    Wire.setClock(Timings::TARGET_LOOP_TIME_US);
 
     if(!imu.begin()){
         Serial.println("IMU initialization failed!");
