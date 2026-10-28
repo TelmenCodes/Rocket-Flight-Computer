@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <Wire.h>
 #include "sensors/MS5611_Driver.h"
 
@@ -15,21 +14,22 @@ SensorType MS5611_Driver::getType() const {
 bool MS5611_Driver::begin(){ //Initializes MS5611 and sets the I2C address.
     Wire.begin();
     Wire.beginTransmission(i2cAddress);
-    Wire.write(I2CAddressList::MS5611_RESET_ADDR);
+    Wire.write(RESET);
     Wire.endTransmission();
-    delay(Timings::POWER_ON_RESET);
+    delay(PWR_ON_DELAY);
+
     for (int i = 0; i < 6; i++){ //Cycles through C1-C6
-        uint8_t c_addr = I2CAddressList::MS5611_PROM_BASE_ADDR + (i * 2); //Loops through the PROM addresses. Difference between C constants are 2 bytes.
+        uint8_t c_addr = PROM_C1 + (i * 2); //Loops through the PROM to get the Calibration constants. Difference between C constants are 2 bytes.
         Wire.beginTransmission(i2cAddress);
         Wire.write(c_addr);
         Wire.endTransmission();
-        Wire.requestFrom(i2cAddress, (uint8_t)Required_Bytes::PROM_C);
-        if (Wire.available() >= Required_Bytes::PROM_C){
+        Wire.requestFrom(i2cAddress, (uint8_t)C_BYTES);
+        if (Wire.available() >= C_BYTES){
             uint16_t msb = Wire.read(); //Reads the Most Significant Byte which are the initial bytes.
             uint16_t lsb = Wire.read(); //Reads the Least Significant Byte which are the last bytes.
             C[i] = (msb << 8) | lsb; //Shifts the MSB 8 bits to the left and then adds the LSB (OR operator).
         }
-        else if (Wire.available() < Required_Bytes::PROM_C){
+        else if (Wire.available() < C_BYTES){
             return false;
         }
     }
@@ -44,7 +44,7 @@ bool MS5611_Driver::read(){
 
         case State::TRIGGER_D1:
             Wire.beginTransmission(i2cAddress);
-            Wire.write(I2CAddressList::MS5611_D1_ADDR);
+            Wire.write(D1_ADDR);
             Wire.endTransmission();
             lastConversionStart_us = micros(); //Records the timestamp.
             currentState = State::WAIT_D1;
@@ -61,18 +61,16 @@ bool MS5611_Driver::read(){
         
         case State::READ_D1_TRIGGER_D2:
             Wire.beginTransmission(i2cAddress);
-            Wire.write(I2CAddressList::MS5611_ADC_ADDR);
+            Wire.write(ADC);
             Wire.endTransmission();
-            Wire.requestFrom(i2cAddress, (uint8_t)Required_Bytes::D);
-            if (Wire.available() >= Required_Bytes::D){
-                MS5611_Driver::b0 = Wire.read();
-                MS5611_Driver::b1 = Wire.read();
-                MS5611_Driver::b2 = Wire.read();
-                MS5611_Driver::D1 = ((uint32_t)b0 << 16) | 
-                                    ((uint32_t)b1 << 8) |
-                                    (uint32_t)b2;
+            Wire.requestFrom(i2cAddress, (uint8_t)D_BYTES);
+            if (Wire.available() >= D_BYTES){
+                b0 = Wire.read();
+                b1 = Wire.read();
+                b2 = Wire.read();
+                D1 = ((uint32_t)b0 << 16) | ((uint32_t)b1 << 8) | (uint32_t)b2;
                 Wire.beginTransmission(i2cAddress);
-                Wire.write(I2CAddressList::MS5611_D2_ADDR);
+                Wire.write(D2_ADDR);
                 Wire.endTransmission();
                 lastConversionStart_us = micros();
                 currentState = State::WAIT_D2;
@@ -93,12 +91,12 @@ bool MS5611_Driver::read(){
         
         case State::READ_D2_CALCULATE:
             Wire.beginTransmission(i2cAddress);
-            Wire.write(I2CAddressList::MS5611_ADC_ADDR);
+            Wire.write(ADC);
             Wire.endTransmission();
 
-            Wire.requestFrom(i2cAddress, (uint8_t)Required_Bytes::D);
+            Wire.requestFrom(i2cAddress, (uint8_t)D_BYTES);
 
-            if(Wire.available() < Required_Bytes::D) {
+            if(Wire.available() < D_BYTES) {
                 currentData.isValid = false;
                 currentState = State::TRIGGER_D1;
                 return false;
@@ -120,7 +118,7 @@ bool MS5611_Driver::read(){
     return false;
 }
 
-const SensorData& MS5611_Driver::getData() const {
+const SensorData& MS5611_Driver::getData() const{
     return currentData;
 }
 

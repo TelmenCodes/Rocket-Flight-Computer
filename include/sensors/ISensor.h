@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Arduino.h>
 #include "Config.h"
 
 enum class SensorType {

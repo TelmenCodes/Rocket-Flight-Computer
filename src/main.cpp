@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <Wire.h>
+#include <SPI.h>
 #include "sensors/MS5611_Driver.h"
 #include "sensors/LSM6DSOX_Driver.h"
 
@@ -9,7 +11,7 @@ void setup(){
     Serial.begin(Timings::MAIN_SERIAL_BAUD);
     
     while(!Serial and millis() < 4000);
-    Serial.print("Flight computer is starting...");
+    Serial.println("Flight computer is starting...");
     Wire.setSDA(TeensyPins::I2C_SDA_PIN);
     Wire.setSCL(TeensyPins::I2C_SCL_PIN);
     Wire.begin();
