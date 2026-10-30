@@ -24,10 +24,10 @@ class LSM6DSOX_Driver: public ISensor{
         static constexpr uint8_t DEVID_EXPECTED = 0x6C; //(Expected Device ID)
         
         static constexpr uint8_t REG_ACCEL = 0x10; //(Acceleration Register)
-        static constexpr uint8_t ACCEL_416HZ = 0x64; //(Acceleration Oversampling rate 416Hz at 16G) Sets the acceleration oversampling rate to 416Hz and the maximum acceleration at 16G.
+        static constexpr uint8_t ACCEL_416HZ = 0x64; //(Acceleration Oversampling Ratio 416Hz at 16G) Sets the acceleration oversampling rate to 416Hz and the maximum acceleration at 16G.
         
         static constexpr uint8_t REG_GYRO = 0x11; //(Gyroscope Register)
-        static constexpr uint8_t GYRO_416HZ = 0x6C; //(Gyroscope Oversampling rate 416Hz at 2000DPS) Sets the gyroscope oversampling rate to 416Hz and the maximum DPS at 2000.
+        static constexpr uint8_t GYRO_416HZ = 0x6C; //(Gyroscope Oversampling Ratio 416Hz at 2000DPS) Sets the gyroscope oversampling rate to 416Hz and the maximum DPS at 2000.
 
         static constexpr uint8_t REG_BDU = 0x12; //(Block Data Update Register)
         static constexpr uint8_t BDU_ENABLED = 0x44; //(Enables Block Data Update) Enabling Block Data Update prevents byte updates during read and keeps register address auto-increment enabled.
