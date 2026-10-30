@@ -1,3 +1,4 @@
+#include <cmath>
 #include "sensors/ADXL375_Driver.h"
 
 const SPISettings ADXL375_Driver::spiSettings(ADXL375_Driver::MAX_SPEED, MSBFIRST, SPI_MODE3);
@@ -43,7 +44,29 @@ bool ADXL375_Driver::begin(){
 }
 
 bool ADXL375_Driver::read(){
-    burstReadData();
+    uint8_t rawData[6];
+    burstReadData(rawData);
+    rawX = (int16_t) ((uint16_t)rawData[1]<<8 | rawData[0]);
+    rawY = (int16_t) ((uint16_t)rawData[3]<<8 | rawData[2]);
+    rawZ = (int16_t) ((uint16_t)rawData[5]<<8 | rawData[4]);
+
+    float accel_x = rawX * SCALE_FACTOR_G * PhysicsConstants::STANDARD_GRAVITY_M_S2;
+    float accel_y = rawY * SCALE_FACTOR_G * PhysicsConstants::STANDARD_GRAVITY_M_S2;
+    float accel_z = rawZ * SCALE_FACTOR_G * PhysicsConstants::STANDARD_GRAVITY_M_S2;
+
+    if (std::abs(accel_x) >= OVERHEAD_SAFETY or //Checks if the accelerometer is saturated.
+    std::abs(accel_y) >= OVERHEAD_SAFETY or
+    std::abs(accel_z) >= OVERHEAD_SAFETY){
+        currentData.isSaturated = true;
+        return false;
+    }
+
+    currentData.accel.x = accel_x;
+    currentData.accel.y = accel_y;
+    currentData.accel.z = accel_z;
+
+    currentData.timestamp_us = micros();
+    currentData.isValid = true;
     return true;
 }
 
@@ -51,31 +74,15 @@ const SensorData &ADXL375_Driver::getData() const{
     return currentData;
 }
 
-void ADXL375_Driver::burstReadData(){
-    uint8_t data[6];
-
+void ADXL375_Driver::burstReadData(uint8_t* data_buffer){
     selectChip();
     SPI.beginTransaction(spiSettings);
     SPI.transfer(REG_DATA_X_LSB | SPI_READ | MULTI_BYTE);
 
-    for (int i = 0; i<6; i++){
-        data[i] = SPI.transfer(DUMMY_BYTE);
+    for (int i = 0; i<6; i++){ //Loops through the received data (which are in bytes) and stores them inside a pointer.
+        data_buffer[i] = SPI.transfer(DUMMY_BYTE);
     }
 
     SPI.endTransaction();
     deselectChip();
-    rawX = (int16_t) ((uint16_t)data[1]<<8 | data[0]);
-    rawY = (int16_t) ((uint16_t)data[3]<<8 | data[2]);
-    rawZ = (int16_t) ((uint16_t)data[5]<<8 | data[4]);
-
-    float accel_x_g = rawX * SCALE_FACTOR_G;
-    float accel_y_g = rawY * SCALE_FACTOR_G;
-    float accel_z_g = rawZ * SCALE_FACTOR_G;
-
-    currentData.accel.x = accel_x_g * PhysicsConstants::STANDARD_GRAVITY_M_S2;
-    currentData.accel.y = accel_y_g * PhysicsConstants::STANDARD_GRAVITY_M_S2;
-    currentData.accel.z = accel_z_g * PhysicsConstants::STANDARD_GRAVITY_M_S2;
-
-    currentData.timestamp_us = micros();
-    currentData.isValid = true;
 }

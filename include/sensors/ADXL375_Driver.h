@@ -6,7 +6,7 @@
 
 class ADXL375_Driver: public ISensor{
     public:
-        ADXL375_Driver(uint8_t ADXL375_CS_PIN = TeensyPins::CS_PIN);
+        ADXL375_Driver(uint8_t ADXL375_CS_PIN = TeensyPins::ADXL375_CS_PIN);
         bool begin() override;
         bool read() override;
         const SensorData& getData() const override;
@@ -37,7 +37,8 @@ class ADXL375_Driver: public ISensor{
         static constexpr uint32_t MAX_SPEED = 5000000; //(Maximum Clock Speed 5MHz) ADXL375's maximum clock speed is 5MHz.
         static const SPISettings spiSettings;
 
-        static constexpr float SCALE_FACTOR_G = 0.049f;
+        static constexpr float SCALE_FACTOR_G = 0.049f; //(Acceleration Scale Factor) Scale factor to correct received data. (Acceleration data * Scale factor * g)
+        static constexpr float OVERHEAD_SAFETY = 195.00f * PhysicsConstants::STANDARD_GRAVITY_M_S2; //(Saturation Overhead Safety)
         SensorData currentData;
         
         inline void selectChip(){ //(Selects Chip) Sets the CS Pin low, so the chip is selected.
@@ -47,5 +48,5 @@ class ADXL375_Driver: public ISensor{
         inline void deselectChip(){ //(Deselect Chip) Sets the CS Pin high, so the chip is unselected.
             digitalWrite(csPin, HIGH);
         }
-        void burstReadData();
+        void burstReadData(uint8_t* data_buffer);
 };
